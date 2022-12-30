@@ -1,0 +1,101 @@
+
+    INFO 
+    root
+    Function : readAutoStart
+    Line     : 110
+    Message  : Value of key (autoStart) read as (False)
+    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+    INFO 
+    scripts.dbHandeler
+    Function : __init__
+    Line     : 14
+    Message  : Connection with database established.
+    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+    INFO 
+    scripts.dbHandeler
+    Function : fetchdata
+    Line     : 132
+    Message  : Fetched every account from database
+    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+    INFO 
+    root
+    Function : __init__
+    Line     : 229
+    Message  : Initiated Menu bar.
+    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+    INFO 
+    root
+    Function : readBrowser
+    Line     : 42
+    Message  : Value of key (browser) read as (1)
+    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+    INFO 
+    root
+    Function : updateRunning
+    Line     : 119
+    Message  : Updated Value of key : (running) 
+	 value : False
+    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+    INFO 
+    root
+    Function : readDoNotShowAgain
+    Line     : 56
+    Message  : Value of key (donotshowagain) read as (False)
+    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+    INFO 
+    root
+    Function : __init__
+    Line     : 186
+    Message  : How To Use Window initiated.
+    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+    INFO 
+    root
+    Function : readChromePath
+    Line     : 76
+    Message  : Value of key (chromedriverpath) read as (lib\driver\chromedriver.exe)
+    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+    INFO 
+    root
+    Function : readMozilaPath
+    Line     : 96
+    Message  : Value of key (moziladriverpath) read as (lib\driver\geckodriver.exe)
+    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+    INFO 
+    root
+    Function : readRunning
+    Line     : 123
+    Message  : Value of key (running) read as (False)
+    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+    INFO 
+    root
+    Function : updateBrowser
+    Line     : 38
+    Message  : Updated Value of key : (browser) 
+	 value : 0
+    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+    INFO 
+    root
+    Function : readRunning
+    Line     : 123
+    Message  : Value of key (running) read as (False)
+    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+    INFO 
+    root
+    Function : updateBrowser
+    Line     : 38
+    Message  : Updated Value of key : (browser) 
+	 value : 1
+    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
