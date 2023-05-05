@@ -1,2 +1,2 @@
 # Meroshare-Bot
- This bot applies ipos for you in a click.
+ This bot applies IPOs for you in one click.
