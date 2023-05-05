@@ -6,6 +6,7 @@ import logging
 from scripts.dbHandeler import DBhandeler
 from scripts.bot import Browser
 import threading
+from scripts.error_handaling import *
 #from tkinter import scrolledtext
 
 # Config file
@@ -19,28 +20,6 @@ class Config():
             self.readConfig = json.load(read)
 
         pass
-
-    def updateBrowser(self,value):
-        # check if browser is already running
-        browser = self.readRunning()
-        if browser == True:
-            
-            logging.warning("Cannot update browser while the process is already running.")
-            
-            return
-
-
-        self.readConfig['browser'] = value
-        
-        with open("data/config.json","w") as write:
-            json.dump(self.readConfig,write,indent=4)
-        
-        logging.info("Updated Value of key : (browser) \n\t value : {}".format(value))
-        return
-    def readBrowser(self):
-        value = self.readConfig['browser']
-        logging.info("Value of key (browser) read as ({})".format(value))
-        return value
 
     def updateDoNotShowAgain(self,value):
         
@@ -74,26 +53,6 @@ class Config():
     def readChromePath(self):
         value = self.readConfig['chromedriverpath']
         logging.info("Value of key (chromedriverpath) read as ({})".format(value))
-        return value
-
-    def updateMozilaPath(self,value):
-        # check if browser is already running
-        browser = self.readRunning()
-        if browser == True:
-            
-            logging.warning("Cannot update Mozilla driver path while the process is already running.")
-            
-            return
-        self.readConfig['moziladriverpath'] = value
-
-        with open("data/config.json","w") as write:
-            json.dump(self.readConfig,write,indent=4)
-        
-        logging.info("Updated Value of key : (moziladriverpath) \n\t value : {}".format(value))
-        return
-    def readMozilaPath(self):
-        value = self.readConfig['moziladriverpath']
-        logging.info("Value of key (moziladriverpath) read as ({})".format(value))
         return value
 
     def updateAutoStart(self,value):
@@ -130,7 +89,7 @@ Root = Tk()
 # Root window properties
 Root.title("IPO Tool")
 Root.iconbitmap("./lib/img/logo.ico")
-Root.geometry("700x500")
+Root.geometry("750x500")
 
 # logging setup
 if True:
@@ -172,8 +131,6 @@ if True:
     EditIcon = ImageTk.PhotoImage(EditIcon)
     StartIcon = Image.open("./lib/img/start.png").resize((125,35),Image.Resampling.LANCZOS)
     StartIcon = ImageTk.PhotoImage(StartIcon)
-    MozillaIcon = Image.open("./lib/img/mozilla.png").resize((30,30),Image.Resampling.LANCZOS)
-    MozillaIcon = ImageTk.PhotoImage(MozillaIcon)
     ChromeIcon = Image.open("./lib/img/chrome.png").resize((30,30),Image.Resampling.LANCZOS)
     ChromeIcon = ImageTk.PhotoImage(ChromeIcon)
 
@@ -242,20 +199,13 @@ class MenuBar():
         browserMenu = Menu(self.menuBar,tearoff=False)
         browserVar = IntVar()
         
-        # Config file select
-        temp = Config().readBrowser()
-        if temp == 0 :
-            browserVar.set(0)
-        if temp == 1 :
-            browserVar.set(1)
-        if temp == None :
-            browserVar.set(NONE)
+
         browserMenu.add_radiobutton(label="Chrome",variable=browserVar,value=0,command=lambda:Config().updateBrowser(browserVar.get()))
-        browserMenu.add_radiobutton(label="Firefox",variable=browserVar,value=1,command=lambda:Config().updateBrowser(browserVar.get()))
+        
 
         # adding update browers path hyperlink
         browserMenu.add_separator()
-        browserMenu.add_command(label="Update Driver Path",command=UpdateDriverPath)
+        browserMenu.add_command(label="Chrome Driver",command=ChromeDriver)
         self.menuBar.add_cascade(label="Browser",menu=browserMenu)
         return
 
@@ -263,7 +213,7 @@ class MenuBar():
         self.menuBar.add_command(label="Exit",command=Root.destroy)
         return
 
-class UpdateDriverPath():
+class ChromeDriver():
     """
         Displays update browser driver path window. Only one window can be active at a time.
     """
@@ -295,12 +245,8 @@ class UpdateDriverPath():
 
         # fetching current driver paths
         chromePath = Config().readChromePath()
-        mozilaPath = Config().readMozilaPath()
-        
         # Increase window width according to path length
-        longerPath = len(mozilaPath)
-        if len(chromePath) > len(mozilaPath):
-            longerPath = len(chromePath)
+        longerPath = len(chromePath)
 
         if longerPath % 10 != 0:
             while longerPath % 10 != 0:
@@ -314,33 +260,33 @@ class UpdateDriverPath():
 
         chromeLB = Label(chromeFrame,text="Chrome Driver Path : {path}".format(path= chromePath))
         chromeLB.pack(pady=(20,5))
-        chromeBTN = Button(chromeFrame,image=ChromeIcon,command=lambda: self.updateChrome(chromePath),border=0)
+        chromeBTN = Button(chromeFrame,text="Update Driver Path",command=lambda: self.updateChromeDriverPath(chromePath),border=0)
         chromeBTN.pack()
         
         # Splitter 
         spliterFrame = Frame(self.newWindow,height=2,bg="#000000")
         spliterFrame.pack(side=TOP,fill=X,expand=1)
 
-        # Mozila
-        mozilaFrame = Frame(self.newWindow,height=99)
-        mozilaFrame.pack(side=TOP,fill=BOTH,expand=1)
-
-        mozilaLB = Label(mozilaFrame,text="Mozila Driver Path : {path}".format(path= mozilaPath))
-        mozilaLB.pack(pady=(20,5))
-        mozilaBTN = Button(mozilaFrame,image=MozillaIcon,border=0,command=lambda: self.updateMozila(mozilaPath))
-        mozilaBTN.pack()
+        # Add auto driver update button
+        updateDriverBTN = Button(self.newWindow,text="Auto update driver",command= self.autoUpdateDriver)
+        updateDriverBTN.pack()
         return  
         
-    def updateChrome(self,currentPath):
-        driver = filedialog.askopenfilename(filetypes=[('Executable File','*.exe')],initialdir=currentPath,title="Select Chrome Driver")
-        Config().updateChromePath(driver)
+    def autoUpdateDriver(self):
+
+        if Browser().updateDriver() != True:
+            messagebox.showerror("Error occured!", "Unknown error occured while updating latest Chrome driver. Please check log file for more information.")
+            return False
+        messagebox.showinfo("Chrome Driver Updated!","Latest Chrome browser driver has been installed.")
+        return True
+    def updateChromeDriverPath(self,currentPath):
+        driver_path= filedialog.askopenfilename(filetypes=[('Executable File','*.exe')],initialdir=currentPath,title="Select Chrome Driver")
+        if driver_path == "":
+            messagebox.showwarning("Failed !","Chrome driver path cannot be empty.")
+            return False
+        Config().updateChromePath(driver_path)
         self.widget()
-        return
-    def updateMozila(self,currentPath):
-        driver = filedialog.askopenfilename(filetypes=[('Executable File','*.exe')],initialdir=currentPath,title="Select Mozila Driver")
-        Config().updateMozilaPath(driver)
-        self.widget()        
-        return
+        return True
 
 class AddWindow():
     """
@@ -364,7 +310,7 @@ class AddWindow():
             # Creating new window if it is not created previosly.
             self.newWindow = Toplevel(Root)
             self.newWindow.iconbitmap("./lib/img/plus.ico")
-            self.newWindow.geometry("400x200")
+            self.newWindow.geometry("400x240")
       
     def add(self):
         # checking if window is created or not:
@@ -376,10 +322,10 @@ class AddWindow():
             return
         
         self.newWindow.title("Add Account")
-        self.widgets()
+        self.addWidgets()
         return
 
-    def update(self,dpCode):
+    def update(self,nickname):
         try:
             test = Label(self.newWindow,text="test")
         except:
@@ -387,13 +333,23 @@ class AddWindow():
             return
 
         self.newWindow.title("Edit Account")
-        self.updateWidgets(dpCode=dpCode)
+        self.updateWidgets(nickname)
         return
 
-    def widgets(self):
+    def addWidgets(self):
         logging.info("Add profile window initiated.")
 
-        # DPcode password units crn trans pin
+        # nickname DPcode password units crn trans pin
+        frame0 = Frame(self.newWindow,width=400,height=33,)
+        frame0.pack()
+        frame0.pack_propagate(False)
+        self.nickname_Var = StringVar()
+        nickname_LB = Label(frame0,text="Enter Nickname : ")
+        nickname_LB.pack(side=LEFT,padx=20)
+        nickname_ETR = Entry(frame0,width=30,textvariable=self.nickname_Var)
+        nickname_ETR.pack(side=LEFT,padx=(20,20))
+
+
         frame1 = Frame(self.newWindow,width=400,height=33,)
         frame1.pack()
         frame1.pack_propagate(False)
@@ -451,20 +407,31 @@ class AddWindow():
         cancelBTN.pack(side=LEFT,padx=(100,100))
         return
 
-    def updateWidgets(self,dpCode = None):
+    def updateWidgets(self,nickname = None):
         logging.info("Edit profile window initiated.")
         
-        self.prevDPCode = dpCode
+        self.prev_nickname = nickname
         
-        if dpCode != None:
-            data = DBhandeler().fetchdata(dpCode=dpCode)
+        if nickname != None:
+            data = DBhandeler().fetchdata(nickname=nickname)
         
 
+        frame0 = Frame(self.newWindow,width=400,height=33,)
+        frame0.pack()
+        frame0.pack_propagate(False)
+        self.nickname_Var = StringVar()
+        self.nickname_Var.set(data['nickname'])
+        nickname_LB = Label(frame0,text="Enter Nickname : ")
+        nickname_LB.pack(side=LEFT,padx=20)
+        nickname_ETR = Entry(frame0,width=30,textvariable=self.nickname_Var)
+        nickname_ETR.pack(side=LEFT,padx=(20,20))
+
+    
         frame1 = Frame(self.newWindow,width=400,height=33,)
         frame1.pack()
         frame1.pack_propagate(False)
         self.dpcodeVar = StringVar()
-        self.dpcodeVar.set(data[0])
+        self.dpcodeVar.set(data['dp_code'])
         dpcodeLB = Label(frame1,text="Enter DP Code : ")
         dpcodeLB.pack(side=LEFT,padx=20)
         dpcodeETR = Entry(frame1,width=30,textvariable=self.dpcodeVar)
@@ -474,7 +441,7 @@ class AddWindow():
         frame2.pack()
         frame2.pack_propagate(False)
         self.passwordVar = StringVar()
-        self.passwordVar.set(data[1])
+        self.passwordVar.set(data['password'])
         passwordLB = Label(frame2,text="Enter Password :")
         passwordLB.pack(side=LEFT,padx=20)
         passwordETR = Entry(frame2,width=30,textvariable=self.passwordVar)
@@ -484,7 +451,7 @@ class AddWindow():
         frame3.pack()
         frame3.pack_propagate(False)
         self.unitsVar = StringVar()
-        self.unitsVar.set(data[2])
+        self.unitsVar.set(data['units'])
         unitsLB = Label(frame3,text="Enter Units :       ")
         unitsLB.pack(side=LEFT,padx=20)
         unitsETR = Entry(frame3,width=30,textvariable=self.unitsVar)
@@ -494,7 +461,7 @@ class AddWindow():
         frame4.pack()
         frame4.pack_propagate(False)
         self.crnVar = StringVar()
-        self.crnVar.set(data[3])
+        self.crnVar.set(data['crn_no'])
         crnLB = Label(frame4,text="Enter CRN No. : ")
         crnLB.pack(side=LEFT,padx=20)
         crnETR = Entry(frame4,width=30,textvariable=self.crnVar)
@@ -504,7 +471,7 @@ class AddWindow():
         frame5.pack()
         frame5.pack_propagate(False)
         self.transPinVar = StringVar()
-        self.transPinVar.set(data[4])
+        self.transPinVar.set(data['tran_pin'])
         transPinLB = Label(frame5,text="Enter Trans PIN :")
         transPinLB.pack(side=LEFT,padx=20)
         transPinETR = Entry(frame5,width=30,textvariable=self.transPinVar)
@@ -524,6 +491,20 @@ class AddWindow():
 
     def verify(self):
         
+
+
+
+        #nickname 
+        try:
+            nickname = str(self.nickname_Var.get())
+        except:
+            messagebox.showerror("Error !","Nickname can only consists letters and number.")
+            return False
+        if len(nickname) > 17 :
+            messagebox.showerror("Error !","Nickname cannot be above 16 characters long.")
+            return False
+        
+
         #dpcode 
         try:
             dpcode = int(self.dpcodeVar.get())
@@ -612,11 +593,20 @@ class AddWindow():
         if self.verify() != True: 
             return False
         
-        if self.duplicateChecker(self.dpcodeVar.get()) == False:
-            messagebox.showerror("Error !","Account with same DP Code already exists !")
+        if self.duplicateChecker(self.dpcodeVar.get(),self.nickname_Var.get()) == False:
+            messagebox.showerror("Error !","Account with same DP Code or Nickname already exists !")
             return False
 
-        DBhandeler().addUser(self.dpcodeVar.get(),self.passwordVar.get(),self.unitsVar.get(),self.crnVar.get(),self.transPinVar.get())
+        checkPass = Browser().checkPassword(self.dpcodeVar.get(),self.passwordVar.get())
+
+        if  checkPass[0] == False and checkPass[1] != None:
+            ErrorHandaling().popup(checkPass[1])
+            return False
+
+        
+        
+
+        DBhandeler().addUser(self.dpcodeVar.get(),self.passwordVar.get(),self.unitsVar.get(),self.crnVar.get(),self.transPinVar.get(),self.nickname_Var.get())
         messagebox.showinfo("Success !","Account added successfully !")
         self.newWindow.destroy()
         
@@ -627,17 +617,25 @@ class AddWindow():
         if self.verify() != True: 
             return False
         
-        DBhandeler().editUser(self.prevDPCode,self.dpcodeVar.get(),self.passwordVar.get(),self.unitsVar.get(),self.crnVar.get(),self.transPinVar.get())
+        checkPass = Browser().checkPassword(self.dpcodeVar.get(),self.passwordVar.get())
+        if checkPass[0] == False and checkPass[1] != None:
+            ErrorHandaling().popup(checkPass[1])
+            return False
+
+        
+        DBhandeler().editUser(self.prev_nickname,self.nickname_Var.get(),self.dpcodeVar.get(),self.passwordVar.get(),self.unitsVar.get(),self.crnVar.get(),self.transPinVar.get())
         messagebox.showinfo("Success !","Account edited successfully !")
         self.newWindow.destroy()
         HomeWindow()
         return True
 
-    def duplicateChecker(self,dpcode):
+    def duplicateChecker(self,dpcode,nickname):
         storedData = DBhandeler().fetchdata(all=True)
 
         for profile in storedData:
-            if profile[0] == dpcode:
+            if profile['dp_code'] == dpcode:
+                return False
+            if profile['nickname'] == nickname:
                 return False
         return True
 
@@ -653,36 +651,58 @@ def manualRunCheck():
 
 def manualRun():
 
-    browser = Config().readBrowser()
-    if browser == None:
-        messagebox.showerror("Error !","Browser not selected !")
-        return False
 
     Config().updateRunning(True)
         
     data = DBhandeler().fetchdata(all=True)
+    failed_oids = []
+    number_of_profile = len(data)
+    break_loop = False
     for profile in data:
-        dpcode = profile[0]
-        password = profile[1]
-        units = profile[2]
-        crn = profile[3]
-        transPin = profile[4]
+        nickname = profile['nickname']
+        oid = profile['oid']
+        
+        # break for loop if error is break worthy
+        if break_loop == True:
+            break
+        
+        while True:
 
-        run = Browser().run(dpcode,password,units,crn,transPin)
+            run = Browser().run(nickname)
 
-        if run == "Invalid Password":
-            messagebox.showwarning("Warning !","Password incorrect for user : {u}\nPlease try again.".format(u = dpcode))
-            break
-        if run == "Driver error":
-            messagebox.showerror("Error !","Driver is not working properly. Please try updating your driver.")
-            break
-        if run == False:
-            messagebox.showerror("Error !","Error occured please check log file. And try again later.")
-            break
+            # check for error 
+            if run[0] == False:
+                # check if error is loop-break worthy.
+                check_break = ErrorHandaling().error_code[run[1]]
+                check_break = check_break['break_loop']
+                if check_break == True:
+                    break_loop = True
+                    # adding failed accounts oids to the list
+                    failed_oids.append(oid)
+                    break
+                else:
+                    continue
+            if run[0] == True:
+                break
+        
+                        
+
     
-    # Showing success
-    if run == True:
+    # Showing result popup-box
+    failed_oid_lenght = len(failed_oids)
+    
+    if failed_oid_lenght == 0:
         messagebox.showinfo("Success !","Applied successfully.")
+    else:
+        concatinated_names = ""
+        counter = 0
+        for oid in failed_oids:
+            name = (DBhandeler().fetchdata(oID=oid))['nickname']
+            if counter +1 == failed_oid_lenght:
+                concatinated_names = concatinated_names + name 
+            concatinated_names = concatinated_names + name +","
+            counter =+ 1
+        messagebox.showinfo("Failed !","Failed to apply for {num}/{total}.Here are the nicknames : {names}".format(num = failed_oid_lenght,total = number_of_profile,names=concatinated_names))
 
     Config().updateRunning(False)
 
@@ -690,6 +710,7 @@ def manualRun():
 
 class HomeWindow():
     def __init__(self) -> None:
+        self.version = "1.0.1"
         
         # destorying all widgets in Root
         for widgets in Root.winfo_children():
@@ -701,7 +722,6 @@ class HomeWindow():
         self.window.pack_propagate(False)
         self.startMenu()
         self.accountWindow()
-
         MenuBar()
 
         return
@@ -741,10 +761,12 @@ class HomeWindow():
     def accountWindow(self):
         
         bottomWindow = Frame(self.window)
-        bottomWindow.config(background="#00BFFF",height=500)
+        bottomWindow.config(background="#00BFFF",height=420)
         bottomWindow.pack(side=TOP,fill=BOTH,expand=1)
         bottomWindow.pack_propagate(False)
-        
+
+
+
         # Add accounts button
         btnFrame = Frame(bottomWindow)
         btnFrame.config(height=50,bg="#CFEE11")
@@ -781,9 +803,10 @@ class HomeWindow():
         self.tree.bind('<Motion>', 'break')
 
         # defining columns
-        self.tree["columns"] = ("dpCode","password","crn","transPin","units")
+        self.tree["columns"] = ("nickname","dpCode","password","crn","transPin","units")
         
         self.tree.column("#0", width=0,stretch=NO)
+        self.tree.column("nickname",anchor=CENTER, width=150,minwidth=150)
         self.tree.column("dpCode",anchor=CENTER, width=150,minwidth=150)
         self.tree.column("password",anchor=CENTER, width=150,minwidth=150)
         self.tree.column("crn",anchor=CENTER, width=125,minwidth=125)
@@ -792,6 +815,7 @@ class HomeWindow():
         
         # headings
         self.tree.heading("#0",text= "")
+        self.tree.heading("nickname",text= "Nickname")
         self.tree.heading("dpCode",text= "DP Code")
         self.tree.heading("password",text= "Password")
         self.tree.heading("crn",text= "CRN No.")
@@ -799,7 +823,7 @@ class HomeWindow():
         self.tree.heading("units",text= "Units")
 
         # set odd even tag for diffrent bg
-        self.tree.tag_configure('oddrow', background="white")
+        self.tree.tag_configure('oddrow', background="#f2f2b8")
         self.tree.tag_configure('evenrow', background="#ffffe0")
 
         # Add data
@@ -815,16 +839,26 @@ class HomeWindow():
 
             tagCounter += 1
 
-            dpcode = profile[0]
-            password = profile[1]
-            units = profile[2]
-            crn = profile[3]
-            transPin = profile[4]
-            self.tree.insert(parent="",index=END,values=(dpcode,password,units,crn,transPin),tags=tag)
+            dpcode = profile['dp_code']
+            password = profile['password']
+            transPin = profile['tran_pin']
+            units = profile['units']
+            crn = profile['crn_no']
+            nickname = profile['nickname']
+            self.tree.insert(parent="",index=END,values=(nickname,dpcode,password,units,crn,transPin),tags=tag)
 
         # Increase row height
         style.configure("Treeview",rowheight=35)
         style.configure('.',borderwidth = 0)
+
+        # add version footer
+        footer_window = Frame(self.window,relief=SUNKEN)
+        footer_window.config(background="#9e9e9e",height=20)
+        footer_window.pack(side=TOP,fill=BOTH,expand=1)
+        footer_window.pack_propagate(False)
+        footer_label = Label(footer_window,text=f"Version: {self.version}",background="#9e9e9e")
+        footer_label.pack(side=RIGHT)
+
 
     def deleteItem(self):
         
@@ -834,10 +868,10 @@ class HomeWindow():
         except:
             messagebox.showerror("Error !", "Select an account before deleting it.")
         else:
-            dpCode = (self.tree.item(selectedRecord))['values'][0]
-
+            dpcode = (self.tree.item(selectedRecord))['values'][1]
+            
             # delete from DB
-            DBhandeler().deletUser(dpCode=dpCode)
+            DBhandeler().deleteUser(dpCode=dpcode)
             
             # delete from screen/ treeview
             self.tree.delete(selectedRecord)
@@ -849,27 +883,68 @@ class HomeWindow():
         
         # show error message box if any row is not selected
         try:
-            selectedRecord = self.tree.selection()[0]
+            selected_record = self.tree.selection()[0]
+            
         except:
             messagebox.showerror("Error !", "Select an account before editing it.")
         else:
-            dpCode = (self.tree.item(selectedRecord))['values'][0]
-            AddWindow().update(dpCode)
+            nickname = (self.tree.item(selected_record))['values'][0]
+            AddWindow().update(nickname)
+            
 
             
         return
 
+class ErrorHandaling():
+    
+    def __init__(self) -> None:
+        self.error_code = { # [msg,error_type]
+            "0x0001" : {
+                        "msg":"Invalid password.",
+                        "level":"warning",
+                        "break_loop":True
+                        },
+            "0x0002" : {
+                        "msg":"User is not authorized.",
+                        "level":"warning"
+                        ,"break_loop":False
+                        },
+            "0x0003" : {
+                        "msg":"Chrome driver not working properly. Try updating driver.",
+                        "level":"error",
+                        "break_loop":True
+                        },
+            "0x0004" : {
+                        "msg":"Unkown error occured while connecting to chrome driver. Check log file.",
+                        "level":"error",
+                        "break_loop":True
+                        },
+            "0x000c" : {
+                        "msg":"Common selenium error. Check log file.",
+                        "level":"common",
+                        "break_loop":False
+                        },
+        }
+        
+        pass
+
+    def popup(self,error_code):
+        error_data = self.error_code[error_code]
+        error_level = error_data["level"]
+        error_msg = error_data['msg']
+        if error_level == "error":
+            messagebox.showerror("Error!",error_msg)
+        if error_level == "warning":
+            messagebox.showerror("Warning!",error_msg)
+        return
+
 def reset():
     print("Reseted everything !")
-    Config().updateBrowser(None)
     Config().updateDoNotShowAgain(False)
     Config().updateAutoStart(False)
     Config().updateChromePath("lib\driver\chromedriver.exe")
-    Config().updateMozilaPath("lib\driver\geckodriver.exe")
 
     return
-
-
 #reset()
 
 
@@ -881,3 +956,4 @@ Config().updateRunning(False)
 if Config().readDoNotShowAgain() !=True:
     HowToUse()
 Root.mainloop()
+

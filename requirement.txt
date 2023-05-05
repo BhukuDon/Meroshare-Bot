@@ -1,0 +1,5 @@
+selenium
+pyinstaller
+Pillow
+pywin32
+requests

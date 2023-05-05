@@ -1,8 +1,6 @@
 {
-    "browser": 1,
     "donotshowagain": false,
     "chromedriverpath": "lib\\driver\\chromedriver.exe",
-    "moziladriverpath": "lib\\driver\\geckodriver.exe",
     "autoStart": false,
     "running": false
 }
